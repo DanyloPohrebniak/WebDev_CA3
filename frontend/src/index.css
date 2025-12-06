@@ -1,0 +1,22 @@
+@import "tailwindcss";
+
+/* Базові глобальні стилі без темного фону та flex-центрування */
+:root {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+}
+
+/* Якщо хочеш одразу задати світлу тему через Tailwind-класи */
+body {
+  background-color: #f3f4f6; /* приблизно bg-slate-100 */
+  color: #0f172a;           /* приблизно text-slate-900 */
+}

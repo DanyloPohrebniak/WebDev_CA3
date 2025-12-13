@@ -146,11 +146,10 @@ const importBooks = async (req, res) => {
         category: String(b.category).trim(),
         price: priceNum,
         stock: stockNum,
-        imageUrl: b.imageUrl ? String(b.imageUrl).trim() : undefined, // якщо є
+        imageUrl: b.imageUrl ? String(b.imageUrl).trim() : undefined, 
       });
     });
 
-    // якщо є помилки — не імпортуємо
     if (errors.length > 0) {
       return res.status(400).json({
         message: 'Invalid JSON format',
@@ -158,7 +157,7 @@ const importBooks = async (req, res) => {
       });
     }
 
-    // insertMany, ordered:false -> якщо є дублікати isbn, все одно вставить інші
+
     const inserted = await Book.insertMany(cleaned, { ordered: false });
 
     return res.status(201).json({
@@ -166,7 +165,6 @@ const importBooks = async (req, res) => {
       insertedCount: inserted.length,
     });
   } catch (err) {
-    // якщо помилка через дублікати (unique isbn) — mongoose кидає bulk error
     console.error('Import error:', err);
     return res.status(500).json({
       message: 'Server error during import',

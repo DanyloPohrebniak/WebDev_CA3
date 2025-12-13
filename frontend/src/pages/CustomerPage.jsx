@@ -16,11 +16,9 @@ export default function CustomerPage() {
 
   const [searchFilters, setSearchFilters] = useState({ title: '', author: '', categories: [] });
 
-  // CART
+  // cart
   const [cartOpen, setCartOpen] = useState(false);
   const [cartItems, setCartItems] = useState([]); 
-  // cartItems: [{ book, quantity, error? }]
-
   const [checkingOut, setCheckingOut] = useState(false);
   const [checkoutMessage, setCheckoutMessage] = useState('');
 
@@ -65,7 +63,6 @@ export default function CustomerPage() {
   }, []);
 
   const handleSearch = (filters) => {
-    // SearchBar має віддавати { title, author, categories }
     const normalized = {
       title: filters.title || '',
       author: filters.author || '',
@@ -75,13 +72,11 @@ export default function CustomerPage() {
     fetchBooks(normalized);
   };
 
-  // Add to cart (коли натискаєш Buy на BookCard)
   const addToCart = (book) => {
     setCheckoutMessage('');
     setCartItems((prev) => {
       const existing = prev.find((x) => x.book._id === book._id);
       if (existing) {
-        // збільшуємо до максимум 5
         return prev.map((x) =>
           x.book._id === book._id
             ? { ...x, quantity: Math.min(5, x.quantity + 1), error: '' }
@@ -105,7 +100,6 @@ export default function CustomerPage() {
     );
   };
 
-  // Checkout = робимо purchase для кожного item
   const checkout = async () => {
     if (cartItems.length === 0) return;
 

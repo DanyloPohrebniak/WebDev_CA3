@@ -15,14 +15,12 @@ const createPurchase = async (req, res) => {
       return res.status(400).json({ message: 'Можна купити від 1 до 5 копій за раз' });
     }
 
-    // знайти користувача і книгу
     const user = await User.findById(userId);
     const book = await Book.findById(bookId);
 
     if (!user) return res.status(404).json({ message: 'User not found' });
     if (!book) return res.status(404).json({ message: 'Book not found' });
 
-    // перевірка stock
     if (book.stock < quantity) {
       return res.status(400).json({ message: 'Not enough stock' });
     }
@@ -30,7 +28,6 @@ const createPurchase = async (req, res) => {
     const basePrice = book.price * quantity;
     let discount = 0;
 
-    // перевірка порогу 150€
     const newTotal = user.totalSpent + basePrice;
     if (newTotal > 150) {
       discount = 0.05; // 5%
@@ -38,15 +35,12 @@ const createPurchase = async (req, res) => {
 
     const finalPrice = basePrice * (1 - discount);
 
-    // оновлюємо stock книги
     book.stock -= quantity;
     await book.save();
 
-    // оновлюємо totalSpent користувача
     user.totalSpent += finalPrice;
     await user.save();
 
-    // створюємо purchase запис
     const purchase = await Purchase.create({
       user: user._id,
       book: book._id,
@@ -95,12 +89,11 @@ const checkoutCart = async (req, res) => {
       return res.status(400).json({ message: 'items must be a non-empty array' });
     }
 
-    // Load all books
     const bookIds = items.map((i) => i.bookId);
     const books = await Book.find({ _id: { $in: bookIds } });
     const bookMap = new Map(books.map((b) => [String(b._id), b]));
 
-    // Validate quantities + stock and compute subtotal
+
     let subtotal = 0;
 
     for (const it of items) {
@@ -122,9 +115,6 @@ const checkoutCart = async (req, res) => {
 
     const discountPct = subtotal >= 150 ? 5 : 0;
     const discountRate = discountPct / 100;
-
-    // Create purchases + decrement stock
-    // finalPrice is per-line item (pricePerUnit * qty * (1 - discountRate))
     const purchasesToCreate = [];
 
     for (const it of items) {
@@ -132,21 +122,17 @@ const checkoutCart = async (req, res) => {
       const qty = Number(it.quantity);
       const pricePerUnit = Number(b.price);
 
-      // decrement stock
       b.stock -= qty;
       await b.save();
 
       const lineFinalPrice = +(pricePerUnit * qty * (1 - discountRate)).toFixed(2);
 
       purchasesToCreate.push({
-        user: userId,          // ✅ required by your schema
-        book: b._id,           // ✅ required by your schema
+        user: userId,     
+        book: b._id,    
         quantity: qty,
-        pricePerUnit,          // ✅ required by your schema
-        finalPrice: lineFinalPrice, // ✅ required by your schema
-        // якщо у тебе є ці поля в схемі — можна додати:
-        // discountPct,
-        // discountApplied: discountPct > 0,
+        pricePerUnit,   
+        finalPrice: lineFinalPrice, 
       });
     }
 

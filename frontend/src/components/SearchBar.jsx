@@ -29,7 +29,7 @@ export default function SearchBar({ onSearch, categories }) {
       onSubmit={handleSubmit}
       className="mb-4 flex flex-wrap gap-3 items-end relative"
     >
-      {/* TITLE */}
+      {/* title */}
       <div className="flex flex-col">
         <label className="text-xs text-slate-600 mb-1">Title</label>
         <input
@@ -40,7 +40,7 @@ export default function SearchBar({ onSearch, categories }) {
         />
       </div>
 
-      {/* AUTHOR */}
+      {/* author */}
       <div className="flex flex-col">
         <label className="text-xs text-slate-600 mb-1">Author</label>
         <input
@@ -51,11 +51,10 @@ export default function SearchBar({ onSearch, categories }) {
         />
       </div>
 
-      {/* CATEGORY INPUT WITH CHECKBOX DROPDOWN */}
+      {/* category */}
       <div className="flex flex-col relative max-w-sm">
         <label className="text-xs text-slate-600 mb-1">Category</label>
 
-        {/* INPUT (looks like Author input) */}
         <input
           readOnly
           onClick={() => setOpen((prev) => !prev)}
@@ -68,7 +67,6 @@ export default function SearchBar({ onSearch, categories }) {
           className="border rounded px-2 py-1 text-sm cursor-pointer "
         />
 
-        {/* DROPDOWN */}
         {open && (
           <div
             className="absolute left-0 top-full mt-1 w-full bg-white 
@@ -110,7 +108,6 @@ export default function SearchBar({ onSearch, categories }) {
         )}
       </div>
 
-      {/* SEARCH BUTTON */}
       <button
         type="submit"
         className="px-4 py-2 text-sm rounded bg-slate-900 text-white hover:bg-slate-700"

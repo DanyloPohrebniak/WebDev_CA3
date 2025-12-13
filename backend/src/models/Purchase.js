@@ -6,7 +6,7 @@ const purchaseSchema = new mongoose.Schema(
     book:   { type: mongoose.Schema.Types.ObjectId, ref: 'Book', required: true },
     quantity:      { type: Number, required: true, min: 1, max: 5 },
     pricePerUnit:  { type: Number, required: true },
-    finalPrice:    { type: Number, required: true }, // з урахуванням знижки
+    finalPrice:    { type: Number, required: true },
   },
   { timestamps: true }
 );

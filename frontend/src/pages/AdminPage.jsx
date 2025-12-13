@@ -139,7 +139,6 @@ export default function AdminPage() {
       const b = books[i];
       if (!b || typeof b !== 'object') return `Book #${i + 1} is not an object`;
 
-      // дозволимо stock або amount
       const hasStock = b.stock !== undefined || b.amount !== undefined;
 
       const missing = required.filter((k) => k !== 'stock' && (b[k] === undefined || b[k] === null || b[k] === ''));
@@ -182,7 +181,6 @@ export default function AdminPage() {
         return;
       }
 
-      // відправляємо на backend
       const res = await apiPost('/api/books/import', { books: parsed });
 
       setImportInfo(`Imported successfully. Inserted: ${res.insertedCount}`);
@@ -210,7 +208,7 @@ export default function AdminPage() {
           </button>
         </div>
 
-        {/* Create / edit form */}
+        {/* Create / edit book */}
         <section className="bg-white rounded-lg shadow-sm p-4 border border-slate-200">
           <h3 className="font-semibold mb-3 text-sm uppercase tracking-wide text-slate-600">
             {editingBook ? 'Edit Book' : 'Create New Book'}
@@ -371,7 +369,7 @@ export default function AdminPage() {
           )}
         </section>
       </div>
-      {/* IMPORT MODAL */}
+
       {isImportOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
           <div className="w-full max-w-md rounded-lg bg-white p-4 shadow-lg">

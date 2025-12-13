@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom';
+import { useEffect, useState } from "react";
 
 export default function Layout({ children }) {
+  
   return (
     <div className="min-h-screen bg-slate-100 text-slate-900">
       <header className="bg-slate-900 text-white px-6 py-4 flex items-center justify-between">

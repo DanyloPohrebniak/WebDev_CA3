@@ -6,11 +6,15 @@ import SearchBar from '../components/SearchBar';
 
 export default function CustomerPage() {
   const [books, setBooks] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [selectedCategories, setSelectedCategories] = useState([]);
+  const [isCategoryFilterOpen, setIsCategoryFilterOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [selectedBook, setSelectedBook] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [purchaseMessage, setPurchaseMessage] = useState('');
+  const [searchFilters, setSearchFilters] = useState({ title: '', author: '' });
 
   const fetchBooks = async (filters = {}) => {
     try {
@@ -20,7 +24,11 @@ export default function CustomerPage() {
 
       if (filters.title) params.append('title', filters.title);
       if (filters.author) params.append('author', filters.author);
-      if (filters.category) params.append('category', filters.category);
+      if (filters.categories && filters.categories.length > 0) {
+        filters.categories.forEach((cat) => {
+          params.append('category', cat);
+        });
+      }
 
       const path = params.toString()
         ? `/api/books?${params.toString()}`
@@ -36,8 +44,18 @@ export default function CustomerPage() {
     }
   };
 
+  const fetchCategories = async () => {
+  try {
+    const data = await apiGet('/api/books/categories');
+    setCategories(data || []);
+  } catch (err) {
+    console.error('Failed to load categories', err);
+  }
+};
+
   useEffect(() => {
     fetchBooks();
+    fetchCategories();
   }, []);
 
   const handleSearch = (filters) => {
@@ -67,8 +85,8 @@ export default function CustomerPage() {
           ? 'Purchase successful! 5% discount applied.'
           : 'Purchase successful!'
       );
-      // оновлюємо список книжок (щоб amount оновився)
-      fetchBooks();
+      
+      fetchBooks({ ...searchFilters, categories: selectedCategories });
       setSelectedBook(null);
       setQuantity(1);
     } catch (err) {
@@ -80,7 +98,7 @@ export default function CustomerPage() {
     <Layout>
       <h2 className="text-xl font-semibold mb-4">Customer – Books</h2>
 
-      <SearchBar onSearch={handleSearch} />
+      <SearchBar onSearch={handleSearch} categories={categories} />
 
       {loading && <p>Loading books...</p>}
       {error && <p className="text-red-600 text-sm mb-2">{error}</p>}

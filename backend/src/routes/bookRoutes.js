@@ -1,5 +1,3 @@
-
-
 const express = require('express');
 
 const router = express.Router();
@@ -9,9 +7,11 @@ const {
   createBook,
   updateBook,
   deleteBook,
+  getBookCategories,
 } = require('../bookFunctions/handleBook');
 
 // /api/books
+router.get('/categories', getBookCategories);
 router.get('/', getBooks);
 router.get('/:id', getBookById);
 router.post('/', createBook);

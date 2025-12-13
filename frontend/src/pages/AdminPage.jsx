@@ -5,6 +5,7 @@ import { apiGet, apiPost, apiPut, apiDelete } from '../api/client';
 
 export default function AdminPage() {
   const [books, setBooks] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -44,8 +45,19 @@ export default function AdminPage() {
     }
   };
 
+  const fetchCategories = async () => {
+  try {
+    const data = await apiGet('/api/books/categories');
+    setCategories(data || []);
+  } catch (err) {
+    console.error(err);
+    setError(err.message || 'Failed to load categories');
+  }
+};
+
   useEffect(() => {
     fetchBooks();
+    fetchCategories();
   }, []);
 
   const handleEditClick = (book) => {

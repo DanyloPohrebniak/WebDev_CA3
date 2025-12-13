@@ -4,17 +4,23 @@ const Book = require('../models/book');
 // GET /api/books
 const getBooks = async (req, res) => {
   try {
-    const { title, author, category } = req.query;
+    const { title, author } = req.query;
+    let { category } = req.query;
     const filter = {};
 
     if (title) {
-      filter.title = new RegExp(title, 'i'); 
+      filter.title = new RegExp(title, 'i');
     }
     if (author) {
       filter.author = new RegExp(author, 'i');
     }
+
     if (category) {
-      filter.category = category;
+      if (Array.isArray(category)) {
+        filter.category = { $in: category };
+      } else {
+        filter.category = category;
+      }
     }
 
     const books = await Book.find(filter);
@@ -77,10 +83,23 @@ const deleteBook = async (req, res) => {
   }
 };
 
+// GET /api/books/categories
+const getBookCategories = async (req, res) => {
+  try {
+    const categories = await Book.distinct('category');
+    categories.sort((a, b) => a.localeCompare(b));
+    res.json(categories);
+  } catch (err) {
+    console.error('Error in getBookCategories:', err);
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
 module.exports = {
   getBooks,
   getBookById,
   createBook,
   updateBook,
   deleteBook,
+  getBookCategories,
 };

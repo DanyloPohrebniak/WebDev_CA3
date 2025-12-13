@@ -4,13 +4,15 @@ export default function BookCard({ book, onSelect }) {
                     w-[450px] h-[260px] flex">
 
       <div className="w-[40%] h-full">
-        <img
-          src={book.imageUrl}
-          alt={book.title}
-          className="w-full h-full object-cover"
-        />
-      </div>
-
+      <img
+        src={`https://covers.openlibrary.org/b/isbn/${String(book.isbn).replaceAll('-', '')}-L.jpg`}
+        alt={book.title}
+        className="w-full h-full object-cover"
+        onError={(e) => {
+          e.currentTarget.src = "https://i.imgur.com/sJ3CT4V.gif";
+        }}
+      />
+    </div>
       <div className="w-[60%] p-4 flex flex-col justify-between">
 
         <div>
@@ -31,13 +33,13 @@ export default function BookCard({ book, onSelect }) {
           </p>
 
           <p className="text-xs text-slate-500">ISBN: {book.isbn}</p>
-          <p className="text-xs text-slate-500">In stock: {book.amount}</p>
+          <p className="text-xs text-slate-500">In stock: {book.stock}</p>
         </div>
 
         {onSelect && (
           <button
             onClick={() => onSelect(book)}
-            className="text-sm border rounded px-3 py-1 hover:bg-slate-100 w-fit"
+            className="px-2 py-2 text-sm rounded bg-emerald-600 text-white hover:bg-emerald-700"
           >
             Buy
           </button>

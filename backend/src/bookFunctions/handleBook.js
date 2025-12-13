@@ -95,6 +95,86 @@ const getBookCategories = async (req, res) => {
   }
 };
 
+// POST /api/books/import
+const importBooks = async (req, res) => {
+  try {
+    const { books } = req.body;
+
+    if (!Array.isArray(books) || books.length === 0) {
+      return res.status(400).json({ message: 'books must be a non-empty array' });
+    }
+
+    const required = ['title', 'isbn', 'author', 'category', 'price'];
+    const errors = [];
+    const cleaned = [];
+
+    books.forEach((b, idx) => {
+      if (!b || typeof b !== 'object') {
+        errors.push({ index: idx, error: 'Item is not an object' });
+        return;
+      }
+
+      // підтримка stock або amount
+      const stockValue = b.stock ?? b.amount;
+
+      const missing = required.filter((k) => b[k] === undefined || b[k] === null || b[k] === '');
+      if (stockValue === undefined || stockValue === null || stockValue === '') {
+        missing.push('stock');
+      }
+
+      if (missing.length > 0) {
+        errors.push({ index: idx, error: `Missing fields: ${missing.join(', ')}` });
+        return;
+      }
+
+      const priceNum = Number(b.price);
+      const stockNum = Number(stockValue);
+
+      if (Number.isNaN(priceNum) || priceNum < 0) {
+        errors.push({ index: idx, error: 'Invalid price' });
+        return;
+      }
+      if (!Number.isInteger(stockNum) || stockNum < 0) {
+        errors.push({ index: idx, error: 'Invalid stock (must be integer >= 0)' });
+        return;
+      }
+
+      cleaned.push({
+        title: String(b.title).trim(),
+        isbn: String(b.isbn).trim(),
+        author: String(b.author).trim(),
+        category: String(b.category).trim(),
+        price: priceNum,
+        stock: stockNum,
+        imageUrl: b.imageUrl ? String(b.imageUrl).trim() : undefined, // якщо є
+      });
+    });
+
+    // якщо є помилки — не імпортуємо
+    if (errors.length > 0) {
+      return res.status(400).json({
+        message: 'Invalid JSON format',
+        errors,
+      });
+    }
+
+    // insertMany, ordered:false -> якщо є дублікати isbn, все одно вставить інші
+    const inserted = await Book.insertMany(cleaned, { ordered: false });
+
+    return res.status(201).json({
+      message: 'Import completed',
+      insertedCount: inserted.length,
+    });
+  } catch (err) {
+    // якщо помилка через дублікати (unique isbn) — mongoose кидає bulk error
+    console.error('Import error:', err);
+    return res.status(500).json({
+      message: 'Server error during import',
+      error: err.message,
+    });
+  }
+};
+
 module.exports = {
   getBooks,
   getBookById,
@@ -102,4 +182,5 @@ module.exports = {
   updateBook,
   deleteBook,
   getBookCategories,
+  importBooks,
 };

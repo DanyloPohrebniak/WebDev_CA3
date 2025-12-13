@@ -85,4 +85,87 @@ const getPurchases = async (req, res) => {
   }
 };
 
-module.exports = { createPurchase, getPurchases };
+// POST /api/purchases/checkout
+const checkoutCart = async (req, res) => {
+  try {
+    const { userId, items } = req.body;
+
+    if (!userId) return res.status(400).json({ message: 'userId is required' });
+    if (!Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ message: 'items must be a non-empty array' });
+    }
+
+    // Load all books
+    const bookIds = items.map((i) => i.bookId);
+    const books = await Book.find({ _id: { $in: bookIds } });
+    const bookMap = new Map(books.map((b) => [String(b._id), b]));
+
+    // Validate quantities + stock and compute subtotal
+    let subtotal = 0;
+
+    for (const it of items) {
+      const qty = Number(it.quantity);
+
+      if (!Number.isInteger(qty) || qty < 1 || qty > 5) {
+        return res.status(400).json({ message: 'quantity must be integer 1..5' });
+      }
+
+      const b = bookMap.get(String(it.bookId));
+      if (!b) return res.status(404).json({ message: `Book not found: ${it.bookId}` });
+
+      if (b.stock < qty) {
+        return res.status(400).json({ message: `Not enough stock for "${b.title}"` });
+      }
+
+      subtotal += Number(b.price) * qty;
+    }
+
+    const discountPct = subtotal >= 150 ? 5 : 0;
+    const discountRate = discountPct / 100;
+
+    // Create purchases + decrement stock
+    // finalPrice is per-line item (pricePerUnit * qty * (1 - discountRate))
+    const purchasesToCreate = [];
+
+    for (const it of items) {
+      const b = bookMap.get(String(it.bookId));
+      const qty = Number(it.quantity);
+      const pricePerUnit = Number(b.price);
+
+      // decrement stock
+      b.stock -= qty;
+      await b.save();
+
+      const lineFinalPrice = +(pricePerUnit * qty * (1 - discountRate)).toFixed(2);
+
+      purchasesToCreate.push({
+        user: userId,          // ✅ required by your schema
+        book: b._id,           // ✅ required by your schema
+        quantity: qty,
+        pricePerUnit,          // ✅ required by your schema
+        finalPrice: lineFinalPrice, // ✅ required by your schema
+        // якщо у тебе є ці поля в схемі — можна додати:
+        // discountPct,
+        // discountApplied: discountPct > 0,
+      });
+    }
+
+    await Purchase.insertMany(purchasesToCreate);
+
+    const total = +(subtotal * (1 - discountRate)).toFixed(2);
+
+    return res.status(201).json({
+      message: 'Checkout successful',
+      discountApplied: discountPct > 0,
+      discountPct,
+      subtotal: +subtotal.toFixed(2),
+      total,
+      count: purchasesToCreate.length,
+    });
+  } catch (err) {
+    console.error('checkoutCart error:', err);
+    return res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
+module.exports = { createPurchase, getPurchases, checkoutCart };

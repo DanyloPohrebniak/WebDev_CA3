@@ -8,6 +8,10 @@ export default function AdminPage() {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isImportOpen, setIsImportOpen] = useState(false);
+  const [importError, setImportError] = useState('');
+  const [importInfo, setImportInfo] = useState('');
+  const [importing, setImporting] = useState(false);
 
   // edit form
   const [editingBook, setEditingBook] = useState(null);
@@ -119,7 +123,77 @@ export default function AdminPage() {
   };
 
   const handleCreateNew = () => {
-    resetForm();
+      setImportError('');
+      setImportInfo('');
+      setIsImportOpen(true);
+  };
+
+  const validateBooksJson = (books) => {
+    if (!Array.isArray(books) || books.length === 0) {
+      return 'JSON must be an array of books (not empty).';
+    }
+
+    const required = ['title', 'isbn', 'author', 'category', 'price', 'stock'];
+
+    for (let i = 0; i < books.length; i++) {
+      const b = books[i];
+      if (!b || typeof b !== 'object') return `Book #${i + 1} is not an object`;
+
+      // дозволимо stock або amount
+      const hasStock = b.stock !== undefined || b.amount !== undefined;
+
+      const missing = required.filter((k) => k !== 'stock' && (b[k] === undefined || b[k] === null || b[k] === ''));
+      if (!hasStock) missing.push('stock');
+
+      if (missing.length > 0) {
+        return `Book #${i + 1} missing fields: ${missing.join(', ')}`;
+      }
+
+      const priceNum = Number(b.price);
+      const stockNum = Number(b.stock ?? b.amount);
+
+      if (Number.isNaN(priceNum) || priceNum < 0) return `Book #${i + 1} has invalid price`;
+      if (!Number.isInteger(stockNum) || stockNum < 0) return `Book #${i + 1} has invalid stock`;
+    }
+
+    return null;
+  };
+
+  const handleImportFile = async (file) => {
+    setImportError('');
+    setImportInfo('');
+
+    if (!file) return;
+
+    if (!file.name.toLowerCase().endsWith('.json')) {
+      setImportError('Please upload a .json file.');
+      return;
+    }
+
+    try {
+      setImporting(true);
+
+      const text = await file.text();
+      const parsed = JSON.parse(text);
+
+      const validationError = validateBooksJson(parsed);
+      if (validationError) {
+        setImportError(validationError);
+        return;
+      }
+
+      // відправляємо на backend
+      const res = await apiPost('/api/books/import', { books: parsed });
+
+      setImportInfo(`Imported successfully. Inserted: ${res.insertedCount}`);
+      await fetchBooks();
+      await fetchCategories();
+    } catch (err) {
+      console.error(err);
+      setImportError(err.message || 'Import failed');
+    } finally {
+      setImporting(false);
+    }
   };
 
   return (
@@ -132,7 +206,7 @@ export default function AdminPage() {
             onClick={handleCreateNew}
             className="px-4 py-2 text-sm rounded bg-slate-900 text-white hover:bg-slate-700"
           >
-            + New Book
+            Insert Book
           </button>
         </div>
 
@@ -297,6 +371,57 @@ export default function AdminPage() {
           )}
         </section>
       </div>
+      {/* IMPORT MODAL */}
+      {isImportOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-md rounded-lg bg-white p-4 shadow-lg">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">
+                Import books from JSON
+              </h3>
+              <button
+                type="button"
+                onClick={() => setIsImportOpen(false)}
+                className="text-slate-500 hover:text-slate-700"
+              >
+                ✕
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-600 mb-3">
+              JSON must be an array of books with fields:
+              <span className="font-semibold"> title, isbn, author, category, price, stock</span>
+            </p>
+
+            <input
+              type="file"
+              accept=".json,application/json"
+              onChange={(e) => handleImportFile(e.target.files?.[0])}
+              className="cursor-pointer bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full shadow-xs placeholder:text-body"
+              disabled={importing}
+            />
+
+            {importError && (
+              <p className="mt-3 text-sm text-red-600">{importError}</p>
+            )}
+
+            {importInfo && (
+              <p className="mt-3 text-sm text-emerald-700">{importInfo}</p>
+            )}
+
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setIsImportOpen(false)}
+                className="px-3 py-2 text-sm rounded border border-slate-300 hover:bg-slate-100"
+                disabled={importing}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </Layout>
   );
 }

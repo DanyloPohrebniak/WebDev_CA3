@@ -8,10 +8,12 @@ const {
   updateBook,
   deleteBook,
   getBookCategories,
+  importBooks,
 } = require('../bookFunctions/handleBook');
 
 // /api/books
 router.get('/categories', getBookCategories);
+router.post('/import', importBooks);
 router.get('/', getBooks);
 router.get('/:id', getBookById);
 router.post('/', createBook);
